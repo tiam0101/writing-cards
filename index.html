@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>文字卡片 · Writing Cards</title>
+<style>
+:root {
+  --bg: #f7f5f0;
+  --bg-soft: #efece4;
+  --card-bg: #ffffff;
+  --text: #2d2a26;
+  --text-soft: #8a857c;
+  --border: rgba(0,0,0,0.06);
+  --shadow: 0 2px 12px rgba(0,0,0,0.06);
+  --shadow-hover: 0 12px 32px rgba(0,0,0,0.12);
+  --accent: #b08968;
+  --chip-bg: rgba(0,0,0,0.05);
+  --header-grad: linear-gradient(135deg, #d4c5b0 0%, #b08968 100%);
+}
+[data-theme="dark"] {
+  --bg: #17151a;
+  --bg-soft: #201d24;
+  --card-bg: #241f28;
+  --text: #ece7e0;
+  --text-soft: #9a928a;
+  --border: rgba(255,255,255,0.07);
+  --shadow: 0 2px 12px rgba(0,0,0,0.3);
+  --shadow-hover: 0 12px 32px rgba(0,0,0,0.5);
+  --chip-bg: rgba(255,255,255,0.08);
+  --header-grad: linear-gradient(135deg, #3a3244 0%, #241f28 100%);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Serif SC", serif;
+  background: var(--bg);
+  color: var(--text);
+  transition: background 0.3s, color 0.3s;
+  min-height: 100vh;
+}
+
+/* Header */
+header {
+  background: var(--header-grad);
+  padding: 48px 24px 28px;
+  text-align: center;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+header::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15), transparent 60%);
+  pointer-events: none;
+}
+.header-inner { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; }
+.site-title {
+  font-size: 2.4rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  margin-bottom: 8px;
+  font-family: "Noto Serif SC", serif;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.15);
+}
+.site-sub {
+  font-size: 0.95rem;
+  opacity: 0.85;
+  letter-spacing: 0.3em;
+  margin-bottom: 28px;
+}
+
+/* Controls */
+.controls {
+  max-width: 960px;
+  margin: -20px auto 0;
+  padding: 16px 20px;
+  background: var(--card-bg);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  position: relative;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  transition: background 0.3s;
+}
+.search-box {
+  flex: 1;
+  min-width: 220px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 0 14px;
+  transition: background 0.3s;
+}
+.search-box input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 0.95rem;
+  padding: 11px 0;
+  color: var(--text);
+  font-family: inherit;
+}
+.search-box .icon { opacity: 0.4; font-size: 1rem; }
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.chip {
+  padding: 7px 16px;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  background: var(--chip-bg);
+  color: var(--text-soft);
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+  font-family: inherit;
+  user-select: none;
+}
+.chip:hover { color: var(--text); transform: translateY(-1px); }
+.chip.active {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(176,137,104,0.35);
+}
+.icon-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: none;
+  background: var(--bg);
+  cursor: pointer;
+  font-size: 1.05rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  color: var(--text);
+}
+.icon-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+
+/* Masonry */
+.masonry {
+  max-width: 1200px;
+  margin: 24px auto;
+  padding: 0 24px;
+  columns: 4 320px;
+  column-gap: 20px;
+}
+.card {
+  break-inside: avoid;
+  margin-bottom: 20px;
+  background: var(--card-bg);
+  border-radius: 16px;
+  padding: 28px 26px;
+  box-shadow: var(--shadow);
+  transition: transform 0.25s, box-shadow 0.25s;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  animation: fadeIn 0.5s ease both;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+}
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: var(--card-grad);
+  opacity: 0.9;
+}
+.card .card-content {
+  position: relative;
+  z-index: 1;
+  font-size: 1.05rem;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.card .card-source {
+  margin-top: 16px;
+  font-size: 0.85rem;
+  color: var(--text-soft);
+  text-align: right;
+  font-style: italic;
+  position: relative;
+  z-index: 1;
+}
+.card .card-tags {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  position: relative;
+  z-index: 1;
+}
+.card .tag {
+  font-size: 0.72rem;
+  padding: 3px 10px;
+  border-radius: 50px;
+  background: var(--chip-bg);
+  color: var(--text-soft);
+}
+.card .card-actions {
+  position: absolute;
+  top: 12px; right: 12px;
+  display: flex;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: 2;
+}
+.card:hover .card-actions { opacity: 1; }
+.card .mini-btn {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: var(--chip-bg);
+  cursor: pointer;
+  font-size: 0.8rem;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text);
+  transition: all 0.15s;
+}
+.card .mini-btn:hover { transform: scale(1.15); }
+.card .mini-btn.starred { background: #f5c842; color: #fff; }
+
+/* Type styles */
+.card.type-名言 .card-content {
+  font-family: "Noto Serif SC", serif;
+  font-size: 1.3rem;
+  line-height: 1.7;
+  letter-spacing: 0.02em;
+  font-weight: 600;
+  text-align: center;
+  padding: 12px 4px;
+}
+.card.type-名言 .card-source { text-align: center; font-style: normal; }
+.card.type-诗词 .card-content {
+  font-family: "Noto Serif SC", "STKaiti", "KaiTi", serif;
+  font-size: 1.15rem;
+  line-height: 2;
+  text-align: center;
+  letter-spacing: 0.08em;
+  padding: 8px 0;
+}
+.card.type-诗词 .card-source { text-align: center; }
+.card.type-文案 .card-content {
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+.card.type-知识 .card-content {
+  font-size: 0.98rem;
+  font-weight: 400;
+}
+
+/* Empty & footer */
+.empty {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--text-soft);
+  font-size: 1.05rem;
+}
+footer {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+}
+
+/* Modal */
+.modal-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(6px);
+  z-index: 100;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.modal-mask.show { display: flex; }
+.modal {
+  background: var(--card-bg);
+  border-radius: 18px;
+  max-width: 640px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 36px 40px;
+  position: relative;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.25);
+  animation: modalIn 0.25s ease;
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.95) translateY(12px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.modal-close {
+  position: absolute;
+  top: 16px; right: 16px;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: var(--chip-bg);
+  cursor: pointer;
+  font-size: 1rem;
+  color: var(--text);
+}
+.modal-content {
+  font-size: 1.15rem;
+  line-height: 2;
+  white-space: pre-wrap;
+  font-family: "Noto Serif SC", serif;
+}
+.modal-source {
+  margin-top: 20px;
+  text-align: right;
+  color: var(--text-soft);
+  font-style: italic;
+}
+.modal-tags { margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--text);
+  color: var(--bg);
+  padding: 10px 24px;
+  border-radius: 50px;
+  font-size: 0.88rem;
+  z-index: 200;
+  opacity: 0;
+  transition: all 0.3s;
+  pointer-events: none;
+}
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+/* Count */
+.card-count {
+  text-align: center;
+  color: var(--text-soft);
+  font-size: 0.85rem;
+  margin-top: 8px;
+  letter-spacing: 0.05em;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="site-title">字 · 卡</div>
+    <div class="site-sub">WRITING CARDS</div>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="search-box">
+    <span class="icon">🔍</span>
+    <input id="searchInput" type="text" placeholder="搜索卡片内容、出处、标签..." autocomplete="off">
+  </div>
+  <div class="chip-row" id="typeChips"></div>
+  <button class="icon-btn" id="themeBtn" title="切换主题">🌙</button>
+  <button class="icon-btn" id="shuffleBtn" title="随机一句">🎲</button>
+</div>
+
+<div class="card-count" id="cardCount"></div>
+<div class="masonry" id="masonry"></div>
+<div class="empty" id="emptyState" style="display:none">没有找到匹配的卡片 ✨</div>
+
+<footer>WRITING CARDS · 文字卡片</footer>
+
+<div class="modal-mask" id="modalMask">
+  <div class="modal">
+    <button class="modal-close" id="modalClose">✕</button>
+    <div class="modal-content" id="modalContent"></div>
+    <div class="modal-source" id="modalSource"></div>
+    <div class="modal-tags" id="modalTags"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ====== Data ======
+let cards = [];
+fetch('data.json')
+  .then(r => {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  })
+  .then(data => {
+    cards = data;
+    init();
+  })
+  .catch(err => {
+    document.getElementById('cardCount').textContent = '数据加载失败，请稍后重试';
+    console.error('Failed to load data.json:', err);
+  });
+
+
+// ====== State ======
+let activeType = '全部';
+let searchQuery = '';
+const starred = new Set(JSON.parse(localStorage.getItem('wc_starred') || '[]'));
+let theme = localStorage.getItem('wc_theme') || 'light';
+
+// ====== Gradients ======
+const GRADIENTS = [
+  'linear-gradient(135deg, #667eea, #764ba2)',   // 1 紫蓝
+  'linear-gradient(135deg, #f093fb, #f5576c)',   // 2 粉红
+  'linear-gradient(135deg, #4facfe, #00f2fe)',   // 3 天蓝
+  'linear-gradient(135deg, #43e97b, #38f9d7)',   // 4 青绿
+  'linear-gradient(135deg, #fa709a, #fee140)',   // 5 橙粉
+  'linear-gradient(135deg, #a18cd1, #fbc2eb)',   // 6 紫粉
+  'linear-gradient(135deg, #fccb90, #d57eeb)',   // 7 金紫
+  'linear-gradient(135deg, #e0c3fc, #8ec5fc)',   // 8 蓝紫
+  'linear-gradient(135deg, #f6d365, #fda085)',   // 9 暖橙
+  'linear-gradient(135deg, #84fab0, #8fd3f4)',   // 10 薄荷
+  'linear-gradient(135deg, #a8edea, #fed6e3)',   // 11 粉绿
+  'linear-gradient(135deg, #ffecd2, #fcb69f)',   // 12 奶油
+];
+
+// ====== Theme ======
+function applyTheme() {
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('themeBtn').textContent = theme === 'dark' ? '☀️' : '🌙';
+}
+applyTheme();
+document.getElementById('themeBtn').addEventListener('click', () => {
+  theme = theme === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('wc_theme', theme);
+  applyTheme();
+});
+
+// ====== Type chips ======
+function buildChips() {
+  const types = ['全部', ...new Set(cards.map(c => c.type).filter(Boolean))];
+  const chipRow = document.getElementById('typeChips');
+  types.forEach(t => {
+    const b = document.createElement('button');
+    b.className = 'chip' + (t === '全部' ? ' active' : '');
+    b.dataset.type = t;
+    b.textContent = t;
+    b.addEventListener('click', () => {
+      activeType = t;
+      chipRow.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c.dataset.type === t));
+      render();
+    });
+    chipRow.appendChild(b);
+  });
+}
+
+// ====== Render ======
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function filtered() {
+  const q = searchQuery.trim().toLowerCase();
+  return cards.filter(c => {
+    if (activeType !== '全部' && c.type !== activeType) return false;
+    if (q) {
+      const hay = `${c.title||''} ${c.content||''} ${c.source||''} ${(c.tags||[]).join(' ')}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function render() {
+  const list = filtered();
+  const masonry = document.getElementById('masonry');
+  masonry.innerHTML = '';
+  document.getElementById('emptyState').style.display = list.length ? 'none' : 'block';
+  document.getElementById('cardCount').textContent = list.length ? `共 ${list.length} 张卡片` : '';
+
+  list.forEach((c, i) => {
+    const g = GRADIENTS[(c.gradient || 1) - 1] || GRADIENTS[0];
+    const type = c.type || '其他';
+    const star = starred.has(String(c.id));
+
+    const el = document.createElement('div');
+    el.className = `card type-${type}`;
+    el.style.setProperty('--card-grad', g);
+    el.style.animationDelay = `${Math.min(i * 30, 400)}ms`;
+
+    el.innerHTML = `
+      <div class="card-actions">
+        <button class="mini-btn ${star ? 'starred' : ''}" data-star="${c.id}" title="${star ? '取消收藏' : '收藏'}">${star ? '★' : '☆'}</button>
+        <button class="mini-btn" data-copy="${c.id}" title="复制">📋</button>
+      </div>
+      <div class="card-content">${esc(c.content)}</div>
+      ${c.source ? `<div class="card-source">— ${esc(c.source)}</div>` : ''}
+      ${(c.tags || []).length ? `<div class="card-tags">${c.tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>` : ''}
+    `;
+
+    el.addEventListener('click', e => {
+      if (e.target.closest('.mini-btn')) return;
+      openModal(c);
+    });
+    masonry.appendChild(el);
+  });
+}
+
+// ====== Modal ======
+const modalMask = document.getElementById('modalMask');
+function openModal(c) {
+  document.getElementById('modalContent').textContent = c.content;
+  document.getElementById('modalSource').textContent = c.source ? `— ${c.source}` : '';
+  document.getElementById('modalTags').innerHTML = (c.tags || []).map(t => `<span class="tag" style="background:var(--chip-bg);color:var(--text-soft);padding:3px 10px;border-radius:50px;font-size:0.75rem">${esc(t)}</span>`).join('');
+  modalMask.classList.add('show');
+}
+function closeModal() { modalMask.classList.remove('show'); }
+document.getElementById('modalClose').addEventListener('click', closeModal);
+modalMask.addEventListener('click', e => { if (e.target === modalMask) closeModal(); });
+
+// ====== Search ======
+let searchTimer;
+document.getElementById('searchInput').addEventListener('input', e => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => { searchQuery = e.target.value; render(); }, 150);
+});
+
+// ====== Shuffle ======
+document.getElementById('shuffleBtn').addEventListener('click', () => {
+  const list = filtered();
+  if (!list.length) return;
+  const c = list[Math.floor(Math.random() * list.length)];
+  openModal(c);
+});
+
+// ====== Star / Copy (event delegation) ======
+document.getElementById('masonry').addEventListener('click', e => {
+  const starBtn = e.target.closest('[data-star]');
+  if (starBtn) {
+    const id = starBtn.dataset.star;
+    if (starred.has(id)) { starred.delete(id); starBtn.classList.remove('starred'); starBtn.textContent = '☆'; }
+    else { starred.add(id); starBtn.classList.add('starred'); starBtn.textContent = '★'; }
+    localStorage.setItem('wc_starred', JSON.stringify([...starred]));
+    return;
+  }
+  const copyBtn = e.target.closest('[data-copy]');
+  if (copyBtn) {
+    const c = cards.find(x => String(x.id) === copyBtn.dataset.copy);
+    if (c) {
+      navigator.clipboard.writeText(c.content).then(() => showToast('已复制到剪贴板 📋'));
+    }
+  }
+});
+
+// ====== Toast ======
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+// ====== Init ======
+function init() {
+  buildChips();
+  render();
+}
+</script>
+</body>
+</html>
